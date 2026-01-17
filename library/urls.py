@@ -1,18 +1,17 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import (UserViewSet, BookViewSet, IssuedBookViewSet, 
-                    ReservationViewSet, FineViewSet, NotificationViewSet)
-
-router = DefaultRouter()
-router.register(r"users", UserViewSet)
-router.register(r"books", BookViewSet)
-router.register(r"issued-books", IssuedBookViewSet, basename="issued-book")
-router.register(r"reservations", ReservationViewSet, basename="reservation")
-router.register(r"fines", FineViewSet, basename="fine")
-router.register(r"notifications", NotificationViewSet, basename="notification")
+﻿from django.urls import path
+from .views import (
+    login_view,
+    logout_view,
+    student_dashboard,
+    teacher_dashboard,
+    staff_dashboard
+)
 
 urlpatterns = [
-    path("", include(router.urls)),
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
+
+    path('student/', student_dashboard, name='student_dashboard'),
+    path('teacher/', teacher_dashboard, name='teacher_dashboard'),
+    path('staff/', staff_dashboard, name='staff_dashboard'),
 ]
-
-
