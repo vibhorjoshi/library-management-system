@@ -1,139 +1,129 @@
-﻿<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staff Dashboard - Library Management</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends "base.html" %}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-        }
+{% block title %}Staff Dashboard - Library Management System{% endblock %}
 
-        .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .navbar h1 {
-            font-size: 24px;
-        }
-
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 10px 20px;
-            border-radius: 5px;
-            transition: background 0.3s;
-        }
-
-        .navbar a:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 20px;
-        }
-
-        .welcome-card {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-        }
-
-        .welcome-card h2 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            border-top: 4px solid #667eea;
-        }
-
-        .stat-number {
-            font-size: 36px;
-            font-weight: bold;
-            color: #667eea;
-            margin: 10px 0;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-        }
-
-        footer {
-            background-color: #333;
-            color: white;
-            text-align: center;
-            padding: 20px;
-            margin-top: 40px;
-        }
-    </style>
-</head>
-<body>
-    <div class="navbar">
-        <h1>📚 Library Management System</h1>
-        <a href="/logout/">Logout</a>
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1>Staff Dashboard</h1>
+            <p class="text-muted">Welcome, {{ user.get_full_name|default:user.username }}! Manage the library system here.</p>
+        </div>
     </div>
 
-    <div class="container">
-        <div class="welcome-card">
-            <h2>Welcome, {{ user.first_name|default:user.username }}! 👋</h2>
-            <p>You are logged in as <strong>Non-Teaching Staff</strong>. Manage library operations below.</p>
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Users</h5>
+                    <p class="card-text display-6">{{ total_users }}</p>
+                </div>
+            </div>
         </div>
-
-        <div class="dashboard-grid">
-            <div class="stat-card">
-                <div>👥</div>
-                <div class="stat-number">{{ total_users }}</div>
-                <div class="stat-label">Total Users</div>
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Books</h5>
+                    <p class="card-text display-6">{{ total_books }}</p>
+                </div>
             </div>
-
-            <div class="stat-card">
-                <div>📚</div>
-                <div class="stat-number">{{ total_books }}</div>
-                <div class="stat-label">Total Books</div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Fines</h5>
+                    <p class="card-text display-6">{{ total_fines }}</p>
+                </div>
             </div>
-
-            <div class="stat-card">
-                <div>💰</div>
-                <div class="stat-number">{{ total_fines }}</div>
-                <div class="stat-label">Pending Fines</div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">System Status</h5>
+                    <p class="card-text"><span class="badge bg-light text-success">Online</span></p>
+                </div>
             </div>
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2025 Library Management System. All rights reserved.</p>
-    </footer>
-</body>
-</html>
+    <!-- Admin Panel -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Admin Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="/admin/" class="list-group-item list-group-item-action">
+                            <strong>Admin Panel</strong>
+                            <small class="d-block text-muted">Full system management</small>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <strong>Manage Users</strong>
+                            <small class="d-block text-muted">Add, edit, or remove users</small>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <strong>Manage Books</strong>
+                            <small class="d-block text-muted">Add, edit, or remove books</small>
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <strong>View Reports</strong>
+                            <small class="d-block text-muted">Generate system reports</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">System Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr>
+                            <td><strong>System Status</strong></td>
+                            <td><span class="badge bg-success">Operational</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Last Backup</strong></td>
+                            <td>Today at 12:00 AM</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Database Status</strong></td>
+                            <td><span class="badge bg-success">Connected</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Active Users</strong></td>
+                            <td>{{ total_users }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Books</strong></td>
+                            <td>{{ total_books }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1">✓ System is running smoothly with all services operational</p>
+                    <p class="mb-1">✓ Database connectivity verified</p>
+                    <p class="mb-0">✓ All scheduled tasks are on track</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,16 +1,18 @@
 ﻿from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render, redirect
 from django.utils import timezone
+from django.db import models
 from datetime import timedelta
 from .models import Book, IssuedBook, Reservation, Fine, Notification, Profile
 from .serializers import (UserSerializer, BookSerializer, IssuedBookSerializer, 
                           ReservationSerializer, FineSerializer, NotificationSerializer)
 from .decorators import role_required
+from .forms import RegistrationForm
 
 
 # ============ AUTHENTICATION VIEWS ============
@@ -38,6 +40,28 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+
+def register_view(request):
+    """
+    Handle user registration with role selection.
+    """
+    if request.user.is_authenticated:
+        role = request.user.profile.role
+        return redirect(f'{role}_dashboard')
+    
+    if request.method == 'POST':
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Automatically log in after registration
+            login(request, user)
+            role = user.profile.role
+            return redirect(f'{role}_dashboard')
+    else:
+        form = RegistrationForm()
+    
+    return render(request, 'auth/register.html', {'form': form})
 
 
 # ============ DASHBOARD VIEWS ============
@@ -72,6 +96,145 @@ def staff_dashboard(request):
         'total_fines': Fine.objects.count(),
     }
     return render(request, "dashboards/staff.html", context)
+
+
+# ============ PROTECTED API ENDPOINTS ============
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_api(request):
+    """Get current user's dashboard information."""
+    user = request.user
+    try:
+        profile = user.profile
+    except Profile.DoesNotExist:
+        return Response(
+            {'error': 'User profile not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    data = {
+        'username': user.username,
+        'email': user.email,
+        'role': profile.role,
+        'full_name': user.get_full_name() or user.username,
+        'date_joined': user.date_joined,
+    }
+    
+    # Add role-specific data
+    if profile.role == 'student':
+        issued_books = IssuedBook.objects.filter(user=user).count()
+        reservations = Reservation.objects.filter(user=user).count()
+        pending_fines = Fine.objects.filter(user=user, paid=False).aggregate(
+            total=models.Sum('amount')
+        )['total'] or 0
+        
+        data.update({
+            'issued_books_count': issued_books,
+            'reservations_count': reservations,
+            'pending_fines': float(pending_fines),
+        })
+    elif profile.role == 'staff':
+        data.update({
+            'total_users': User.objects.count(),
+            'total_books': Book.objects.count(),
+            'total_fines': Fine.objects.aggregate(
+                total=models.Sum('amount')
+            )['total'] or 0,
+            'overdue_books': IssuedBook.objects.filter(
+                status='overdue'
+            ).count(),
+        })
+    
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def issue_book(request):
+    """Issue a book to the current user."""
+    user = request.user
+    book_id = request.data.get('book_id')
+    
+    if not book_id:
+        return Response(
+            {'error': 'book_id is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        book = Book.objects.get(id=book_id)
+    except Book.DoesNotExist:
+        return Response(
+            {'error': 'Book not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    if book.available_copies <= 0:
+        return Response(
+            {'error': 'No copies available'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Create IssuedBook record
+    due_date = timezone.now() + timedelta(days=14)
+    issued_book = IssuedBook.objects.create(
+        user=user,
+        book=book,
+        due_date=due_date
+    )
+    
+    # Update available copies
+    book.available_copies -= 1
+    book.save()
+    
+    return Response(
+        IssuedBookSerializer(issued_book).data,
+        status=status.HTTP_201_CREATED
+    )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def return_book(request):
+    """Return an issued book."""
+    user = request.user
+    issued_book_id = request.data.get('issued_book_id')
+    
+    if not issued_book_id:
+        return Response(
+            {'error': 'issued_book_id is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        issued_book = IssuedBook.objects.get(id=issued_book_id, user=user)
+    except IssuedBook.DoesNotExist:
+        return Response(
+            {'error': 'Issued book not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    if issued_book.return_date:
+        return Response(
+            {'error': 'Book already returned'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Mark as returned
+    issued_book.return_date = timezone.now()
+    issued_book.status = 'returned'
+    issued_book.save()
+    
+    # Update available copies
+    book = issued_book.book
+    book.available_copies += 1
+    book.save()
+    
+    return Response(
+        IssuedBookSerializer(issued_book).data,
+        status=status.HTTP_200_OK
+    )
 
 
 # ============ API VIEWSETS (EXISTING) ============
