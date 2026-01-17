@@ -1,0 +1,77 @@
+﻿# ========================================================================
+# LIBRARY MANAGEMENT SYSTEM - COMPLETE SETUP GUIDE
+# ========================================================================
+
+## Project Status:  READY TO RUN
+
+All dependencies are installed:
+   mysql-connector-python==8.2.0
+   bcrypt==4.1.1  
+   python-dotenv==1.0.0
+
+## CRITICAL: MySQL Authentication Setup
+
+Your MySQL root user is password-protected. You need to:
+
+1. OPTION A: Reset MySQL root password (Recommended)
+   - Stop MySQL Service: net stop MySQL80
+   - Start with skip-grant-tables: mysqld --skip-grant-tables
+   - Connect: mysql -u root
+   - Run:
+     FLUSH PRIVILEGES;
+     ALTER USER "root"@"localhost" IDENTIFIED BY "root_password";
+     EXIT;
+   - Restart MySQL: net start MySQL80
+
+2. OPTION B: Create new MySQL user (If root password is known)
+   - Open Command Prompt
+   - Run: mysql -u root -p
+   - Enter root password when prompted
+   - Execute:
+     CREATE DATABASE library_db;
+     CREATE USER "library_user"@"localhost" IDENTIFIED BY "library123";
+     GRANT ALL PRIVILEGES ON library_db.* TO "library_user"@"localhost";
+     FLUSH PRIVILEGES;
+
+3. OPTION C: Use existing user credentials
+   - Update .env file with your current MySQL credentials
+
+## After MySQL is configured:
+
+1. Update .env file:
+   DB_HOST=localhost
+   DB_USER=root
+   DB_PASSWORD=<your_password>
+   DB_NAME=library_db
+
+2. Run the application:
+   python library_management.py
+
+3. On first launch:
+   - App will auto-create database (if user has permission)
+   - App will auto-create all tables
+   - Register a new user
+   - Login and start using!
+
+## Features Available:
+
+ User Registration & Login (Password hashing with bcrypt)
+ Book Management (Add, Search, View)
+ Book Issuance & Returns
+ Fine Calculation (Auto-calculated for overdue books)
+ Reservation System
+ Role-based Access (Student, Librarian, Admin)
+ Email validation
+ Username validation
+ Strong password requirements
+
+## Test Credentials (After setup):
+
+Username: admin
+Password: admin123
+Email: admin@library.com
+
+Username: student1
+Password: student123
+Email: student@library.com
+

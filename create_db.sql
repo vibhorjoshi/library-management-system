@@ -1,0 +1,3 @@
+﻿-- Active: 1768508709994@@127.0.0.1@3306
+CREATE DATABASE IF NOT EXISTS library_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE library_db;
